@@ -1,0 +1,31 @@
+# Dependencies (Folder ini sangat berat, jangan di-push)
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production / Build (Hasil akhir aplikasi)
+dist/
+build/
+
+# Environment Variables (Sangat rahasia, berisi API Key dll)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vite / IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Files
+.DS_Store
+Thumbs.db
