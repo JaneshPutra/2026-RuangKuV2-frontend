@@ -59,13 +59,21 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
     e.preventDefault();
     try {
       const url = 'http://localhost:5205/api/Peminjaman';
-      if (type === 'add') await axios.post(url, form);
-      else await axios.put(`${url}/${form.id}`, form);
+      if (type === 'add') {
+        await axios.post(url, form);
+      } else {
+        await axios.put(`${url}/${form.id}`, form);
+      }
       refreshData();
       onClose();
-    } catch (err) { alert("Gagal simpan peminjaman."); }
+    } catch (err: any) {
+      if (err.response && err.response.data && err.response.data.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Terjadi kesalahan sistem.");
+      }
+    }
   };
-
   // HANDLE SIMPAN RUANGAN (MASTER DATA)
   const handleSaveRoom = async () => {
     try {
