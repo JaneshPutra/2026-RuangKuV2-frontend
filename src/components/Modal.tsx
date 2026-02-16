@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, MapPin, Trash2, CheckCircle2, Edit3, Users, DoorOpen } from 'lucide-react';
+import { X, Save, User, MapPin, Trash2, CheckCircle2, Edit3, DoorOpen, Calendar, Clock, Info } from 'lucide-react';
 import axios from 'axios';
 
 const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsData, allPeminjamanData }: any) => {
-  // State untuk Form Peminjaman
   const [form, setForm] = useState({ 
     id: 0, 
     namaPeminjam: '', 
@@ -13,7 +12,6 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
     status: 'Menunggu' 
   });
 
-  // State untuk Form Ruangan (Master Data)
   const [formRoom, setFormRoom] = useState({
     id: 0,
     namaRuangan: '',
@@ -22,15 +20,16 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
     status: 'Available'
   });
 
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return '';
-    return dateString.split('T')[0];
+  const formatDateTimeLocal = (isoString: string) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
   };
 
   useEffect(() => {
     if (isOpen && data) {
       if (type === 'detail_room' || type === 'edit_room') {
-        // Jika yang dibuka adalah modal terkait Ruangan
         setFormRoom({
           id: data.id || 0,
           namaRuangan: data.namaRuangan || '',
@@ -39,13 +38,12 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
           status: data.status || 'Available'
         });
       } else {
-        // Jika yang dibuka adalah modal terkait Peminjaman
         setForm({ 
           id: data.id || 0,
           namaPeminjam: data.namaPeminjam || '',
           ruangan: data.ruangan || '',
-          tanggalPinjam: formatDateForInput(data.tanggalPinjam),
-          tanggalKembali: formatDateForInput(data.tanggalKembali),
+          tanggalPinjam: formatDateTimeLocal(data.tanggalPinjam),
+          tanggalKembali: formatDateTimeLocal(data.tanggalKembali),
           status: data.status || 'Menunggu'
         });
       }
@@ -54,47 +52,19 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
     }
   }, [data, isOpen, type]);
 
-  // HANDLE SIMPAN PEMINJAMAN
   const handleSubmitPeminjaman = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const url = 'http://localhost:5205/api/Peminjaman';
-      if (type === 'add') {
-        await axios.post(url, form);
-      } else {
-        await axios.put(`${url}/${form.id}`, form);
-      }
+      if (type === 'add') await axios.post(url, form);
+      else await axios.put(`${url}/${form.id}`, form);
       refreshData();
       onClose();
-    } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.message) {
-        alert(err.response.data.message);
-      } else {
-        alert("Terjadi kesalahan sistem.");
-      }
-    }
-  };
-  // HANDLE SIMPAN RUANGAN (MASTER DATA)
-  const handleSaveRoom = async () => {
-    try {
-      await axios.put(`http://localhost:5205/api/Ruangan/${formRoom.id}`, formRoom);
-      refreshData(); // Ini akan memicu fetchRuangan di App.tsx jika fungsinya digabung
-      window.location.reload(); // Force reload agar data ruangan terbaru muncul
-      onClose();
-    } catch (err) { alert("Gagal update data ruangan."); }
-  };
-
-  const handleDeletePeminjaman = async () => {
-    if (window.confirm(`Hapus data peminjaman ${form.namaPeminjam}?`)) {
-      try {
-        await axios.delete(`http://localhost:5205/api/Peminjaman/${form.id}`);
-        refreshData();
-        onClose();
-      } catch (err) { alert("Gagal menghapus data."); }
+    } catch (err: any) { 
+      alert(err.response?.data?.message || "Gagal simpan peminjaman."); 
     }
   };
 
-  // Filter list booking yang ada di ruangan ini (Hanya yang disetujui)
   const listBookingRuangan = allPeminjamanData?.filter(
     (b: any) => b.ruangan === formRoom.namaRuangan && b.status === 'Disetujui'
   ) || [];
@@ -103,194 +73,184 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
       
-      <div className="relative bg-[#1e1e1e] border border-[#333] w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl">
+      <div className={`relative bg-[#1e1e1e] border border-[#333] w-full ${type === 'add' || type === 'edit' ? 'max-w-4xl' : 'max-w-xl'} rounded-xl overflow-hidden shadow-2xl`}>
         
         {/* HEADER */}
-        <div className="px-10 py-6 border-b border-[#333] flex justify-between items-center bg-[#252525]">
-          <div>
-            <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em]">System Manager</h3>
-            <p className="text-white font-bold text-lg mt-0.5 tracking-tight uppercase italic">
-                {type.includes('room') ? 'Master Data Ruangan' : 'Peminjaman Manager'}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-3 bg-[#121212] text-[#666] hover:text-white rounded-2xl border border-[#333] transition-all"><X size={20}/></button>
+        <div className="px-8 py-5 border-b border-[#333] flex justify-between items-center bg-[#252525]">
+          <p className="text-white font-bold text-lg uppercase italic tracking-tight">
+            {type.includes('room') ? 'Master Data Ruangan' : 'Booking Management'}
+          </p>
+          <button onClick={onClose} className="p-2 text-[#666] hover:text-white transition-all"><X size={20}/></button>
         </div>
 
-        <div className="p-10">
-          
-          {/* 1. DETAIL RUANGAN (Menampilkan info & list booking) */}
+        <div className="p-8">
           {type === 'detail_room' && (
-            <div className="space-y-8">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-5">
-                   <div className="p-4 bg-indigo-600 rounded-3xl text-white shadow-lg shadow-indigo-600/20"><DoorOpen size={32}/></div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-[#121212] p-6 rounded-xl border border-[#333]">
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-indigo-600 rounded-xl text-white"><DoorOpen size={24}/></div>
                    <div>
-                      <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">{formRoom.namaRuangan}</h2>
-                      <p className="text-indigo-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">{formRoom.lokasi}</p>
+                      <h2 className="text-2xl font-black text-white italic uppercase leading-none">{formRoom.namaRuangan}</h2>
+                      <p className="text-indigo-500 font-bold uppercase tracking-widest text-[10px] mt-1.5">{formRoom.lokasi}</p>
                    </div>
                 </div>
-                <button onClick={() => setModalType('edit_room')} className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase transition-all flex items-center gap-2 border border-white/10">
-                  <Edit3 size={14} /> Edit Room
+                <button onClick={() => setModalType('edit_room')} className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-black text-[10px] uppercase transition-all flex items-center gap-2 border border-white/10">
+                  <Edit3 size={12} /> Edit
                 </button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#121212] p-6 rounded-3xl border border-[#333]">
-                   <p className="text-[10px] font-black text-[#555] uppercase tracking-widest mb-1">Max Capacity</p>
-                   <p className="text-2xl font-black text-white italic">{formRoom.kapasitas} <span className="text-xs text-[#555] not-italic">Seats</span></p>
+                <div className="bg-[#121212] p-5 rounded-xl border border-[#333]">
+                   <p className="text-[10px] font-black text-[#555] uppercase mb-1">Capacity</p>
+                   <p className="text-xl font-black text-white italic">{formRoom.kapasitas} Pax</p>
                 </div>
-                <div className="bg-[#121212] p-6 rounded-3xl border border-[#333]">
-                   <p className="text-[10px] font-black text-[#555] uppercase tracking-widest mb-1">Current Status</p>
-                   <p className={`text-2xl font-black italic ${formRoom.status === 'Available' ? 'text-emerald-500' : 'text-amber-500'}`}>{formRoom.status}</p>
+                <div className="bg-[#121212] p-5 rounded-xl border border-[#333]">
+                   <p className="text-[10px] font-black text-[#555] uppercase mb-1">Status</p>
+                   <p className={`text-xl font-black italic ${formRoom.status === 'Available' ? 'text-emerald-500' : 'text-amber-500'}`}>{formRoom.status}</p>
                 </div>
               </div>
 
-              <div className="pt-4">
-                <h4 className="text-[10px] font-black text-[#555] uppercase tracking-[0.3em] mb-4">Upcoming Schedule</h4>
-                <div className="max-h-[200px] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black text-[#555] uppercase tracking-widest px-1">Room Schedule</h4>
+                <div className="max-h-[180px] overflow-y-auto space-y-2 pr-2">
                   {listBookingRuangan.length > 0 ? listBookingRuangan.map((b: any) => (
-                    <div key={b.id} className="bg-[#1a1a1a] p-5 rounded-2xl border border-[#333] flex justify-between items-center">
+                    <div key={b.id} className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] flex justify-between items-center">
                       <div>
-                        <p className="text-white font-bold italic uppercase text-sm">{b.namaPeminjam}</p>
-                        <p className="text-[10px] text-indigo-500 font-bold uppercase mt-1 tracking-tighter">{b.tanggalPinjam} — {b.tanggalKembali}</p>
+                        <p className="text-white font-bold italic uppercase text-xs">{b.namaPeminjam}</p>
+                        <p className="text-[10px] text-[#555] font-bold mt-1 uppercase">
+                          {new Date(b.tanggalPinjam).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
                       </div>
-                      <div className="bg-emerald-500/20 px-3 py-1 rounded-full"><p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Reserved</p></div>
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
                     </div>
                   )) : (
-                    <div className="py-10 text-center border-2 border-dashed border-[#252525] rounded-3xl">
-                      <p className="text-[10px] font-black text-[#444] uppercase tracking-widest">No active bookings found</p>
-                    </div>
+                    <div className="py-8 text-center border border-dashed border-[#333] rounded-xl text-[10px] font-black text-[#333] uppercase">No active bookings</div>
                   )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 2. EDIT RUANGAN (Hanya Kapasitas & Status) */}
           {type === 'edit_room' && (
-            <div className="space-y-8">
-               <div className="bg-indigo-600/5 p-6 rounded-3xl border border-indigo-500/10">
-                  <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Editing Master Data</p>
-                  <p className="text-white font-bold text-xl italic uppercase tracking-tighter">{formRoom.namaRuangan}</p>
+            <div className="space-y-6">
+               <div className="bg-[#121212] p-6 rounded-xl border border-[#333] mb-6">
+                  <h2 className="text-xl font-black text-white italic uppercase">Edit {formRoom.namaRuangan}</h2>
                </div>
-               
-               <div className="space-y-6">
-                  <div>
-                    <label className="text-[10px] font-black text-[#555] uppercase tracking-widest ml-1 mb-3 block">Update Capacity</label>
-                    <div className="relative">
-                      <Users size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#444]"/>
-                      <input 
-                        type="number" 
-                        className="w-full bg-[#121212] border border-[#333] rounded-2xl p-5 pl-14 text-white font-bold outline-none focus:border-indigo-500 transition-all"
-                        value={formRoom.kapasitas}
-                        onChange={e => setFormRoom({...formRoom, kapasitas: parseInt(e.target.value)})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-black text-[#555] uppercase tracking-widest ml-1 mb-3 block">Update Status</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      {['Available', 'Maintenance'].map(s => (
-                        <button 
-                          key={s}
-                          onClick={() => setFormRoom({...formRoom, status: s as any})}
-                          className={`py-5 rounded-2xl font-black text-[10px] uppercase border-2 transition-all ${formRoom.status === s ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-lg shadow-indigo-600/10' : 'border-[#333] bg-[#121212] text-[#555]'}`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
+               <div>
+                  <label className="text-xs font-bold text-[#555] uppercase tracking-widest ml-1 mb-2 block">Update Capacity</label>
+                  <input 
+                    type="number" 
+                    className="w-full bg-[#121212] border border-[#333] rounded-xl p-4 text-white font-bold outline-none focus:border-indigo-500 transition-all"
+                    value={formRoom.kapasitas}
+                    onChange={e => setFormRoom({...formRoom, kapasitas: parseInt(e.target.value)})}
+                  />
+               </div>
+               <div>
+                  <label className="text-xs font-bold text-[#555] uppercase tracking-widest ml-1 mb-2 block">Room Availability</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Available', 'Maintenance'].map(s => (
+                      <button 
+                        key={s}
+                        onClick={() => setFormRoom({...formRoom, status: s as any})}
+                        className={`py-4 rounded-xl font-black text-[10px] uppercase border transition-all ${formRoom.status === s ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-[#333] bg-[#121212] text-[#555]'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
                   </div>
                </div>
-
-               <button onClick={handleSaveRoom} className="w-full bg-white text-black py-6 rounded-[2rem] font-black text-xs shadow-xl transition-all uppercase italic tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-indigo-500 hover:text-white">
-                  <Save size={20}/> Update Data
+               <button onClick={() => {
+                  axios.put(`http://localhost:5205/api/Ruangan/${formRoom.id}`, formRoom)
+                  .then(() => { window.location.reload(); })
+                  .catch(() => alert("Gagal update."));
+               }} className="w-full bg-indigo-600 text-white py-5 rounded-xl font-black text-xs uppercase italic tracking-[0.2em] hover:bg-indigo-500 transition-all">
+                  <Save size={18} className="inline mr-2"/> Update Room Data
                </button>
             </div>
           )}
 
-          {/* 3. CRUD PEMINJAMAN (Lama - Tetap Dipertahankan) */}
-          {(type === 'add' || type === 'edit' || type === 'detail') && (
-             <>
-                {type === 'detail' ? (
-                   <div className="space-y-8">
-                      {/* ... (Konten Detail Peminjaman Lama) ... */}
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="bg-[#121212] p-6 rounded-3xl border border-[#333] flex items-center gap-4">
-                            <div className="p-3 bg-indigo-600 rounded-2xl text-white"><User size={24}/></div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] font-black text-[#555] uppercase tracking-widest">Peminjam</p>
-                                <p className="text-lg font-bold text-white tracking-tight truncate">{form.namaPeminjam}</p>
-                            </div>
+          {(type === 'add' || type === 'edit') && (
+            <form onSubmit={handleSubmitPeminjaman} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-indigo-500 uppercase mb-2 block">Nama Peminjam</label>
+                    <input required className="w-full bg-[#121212] border border-[#333] rounded-xl p-4 text-white outline-none focus:border-indigo-500" value={form.namaPeminjam} onChange={e => setForm({...form, namaPeminjam: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#555] uppercase mb-2 block">Waktu Mulai</label>
+                    <input required type="datetime-local" className="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-white [color-scheme:dark]" value={form.tanggalPinjam} onChange={e => setForm({...form, tanggalPinjam: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#555] uppercase mb-2 block">Waktu Selesai</label>
+                    <input required type="datetime-local" className="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-white [color-scheme:dark]" value={form.tanggalKembali} onChange={e => setForm({...form, tanggalKembali: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-indigo-500 uppercase mb-3 block">Pilih Ruangan</label>
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                    {roomsData?.map((r: any) => (
+                      <div key={r.id} onClick={() => setForm({...form, ruangan: r.namaRuangan})} 
+                        className={`px-4 py-2.5 rounded-xl border cursor-pointer flex justify-between items-center transition-all ${form.ruangan === r.namaRuangan ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-[#333] bg-[#121212] text-[#555]'}`}>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold uppercase">{r.namaRuangan}</span>
+                          <span className="text-[10px] text-[#444] font-bold">{r.lokasi}</span>
                         </div>
-                        <div className="bg-[#121212] p-6 rounded-3xl border border-[#333] flex items-center gap-4">
-                            <div className="p-3 bg-indigo-600/10 rounded-2xl text-indigo-500"><MapPin size={24}/></div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] font-black text-[#555] uppercase tracking-widest">Ruangan</p>
-                                <p className="text-lg font-bold text-white tracking-tight truncate">{form.ruangan}</p>
-                            </div>
-                        </div>
+                        {form.ruangan === r.namaRuangan && <CheckCircle2 size={16} className="text-indigo-500" />}
                       </div>
-
-                      <div className="bg-indigo-600/5 p-8 rounded-[2rem] border border-indigo-500/10 flex justify-around items-center">
-                        <div className="text-center">
-                            <p className="text-[10px] font-black text-indigo-400/50 uppercase mb-2 tracking-widest">Waktu Mulai</p>
-                            <p className="text-xl font-black text-white italic">{form.tanggalPinjam}</p>
-                        </div>
-                        <div className="h-12 w-px bg-indigo-500/20"></div>
-                        <div className="text-center">
-                            <p className="text-[10px] font-black text-indigo-400/50 uppercase mb-2 tracking-widest">Waktu Kembali</p>
-                            <p className="text-xl font-black text-white italic">{form.tanggalKembali}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 pt-4">
-                        <button onClick={() => setModalType('edit')} className="flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl font-black text-xs transition-all tracking-[0.2em] uppercase"><Edit3 size={18}/> Edit Data</button>
-                        <button onClick={handleDeletePeminjaman} className="flex items-center justify-center gap-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white py-5 rounded-2xl font-black text-xs transition-all border border-rose-500/20 tracking-[0.2em] uppercase"><Trash2 size={18}/> Hapus Data</button>
-                      </div>
-                   </div>
-                ) : (
-                   <form onSubmit={handleSubmitPeminjaman} className="space-y-10">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                         <div className="space-y-8">
-                            <div>
-                               <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest ml-1 mb-3 block">Nama Peminjam</label>
-                               <input required readOnly={type === 'edit'} className={`w-full border border-[#333] rounded-2xl p-4 font-bold outline-none transition-all ${type === 'edit' ? 'bg-[#252525] text-[#666] cursor-not-allowed' : 'bg-[#121212] text-white focus:border-indigo-500'}`} value={form.namaPeminjam} onChange={e => setForm({...form, namaPeminjam: e.target.value})} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                               <div>
-                                  <label className="text-[10px] font-black text-[#555] uppercase ml-1 mb-3 block">Tgl Mulai</label>
-                                  <input required type="date" className="w-full bg-[#121212] border border-[#333] rounded-2xl p-4 text-xs text-white [color-scheme:dark] outline-none" value={form.tanggalPinjam} onChange={e => setForm({...form, tanggalPinjam: e.target.value})} />
-                               </div>
-                               <div>
-                                  <label className="text-[10px] font-black text-[#555] uppercase ml-1 mb-3 block">Tgl Kembali</label>
-                                  <input required type="date" className="w-full bg-[#121212] border border-[#333] rounded-2xl p-4 text-xs text-white [color-scheme:dark] outline-none" value={form.tanggalKembali} onChange={e => setForm({...form, tanggalKembali: e.target.value})} />
-                               </div>
-                            </div>
-                         </div>
-                         <div>
-                            <label className="text-[10px] font-black text-[#555] uppercase tracking-widest ml-1 mb-4 block">Pilih Ruangan</label>
-                            <div className="grid grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
-                               {roomsData?.map((r: any) => (
-                                 <div key={r.id} onClick={() => setForm({...form, ruangan: r.namaRuangan})} 
-                                   className={`px-4 py-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group ${form.ruangan === r.namaRuangan ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-lg shadow-indigo-600/10' : 'border-[#333] bg-[#121212] text-[#555] hover:border-[#444]'}`}>
-                                   <span className="text-[10px] font-black uppercase truncate tracking-tighter">{r.namaRuangan}</span>
-                                   {form.ruangan === r.namaRuangan && <CheckCircle2 className="text-indigo-500" size={16} />}
-                                 </div>
-                               ))}
-                            </div>
-                         </div>
-                      </div>
-                      <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 py-6 rounded-[2rem] font-black text-white text-sm shadow-xl shadow-indigo-600/20 transition-all uppercase italic tracking-[0.3em] flex items-center justify-center gap-4">
-                         <Save size={20}/> {type === 'add' ? 'Tambah Pinjaman' : 'Simpan Perubahan'}
-                      </button>
-                   </form>
-                )}
-             </>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-[#333] flex justify-end">
+                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 px-10 py-4 rounded-xl font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                  <Save size={18}/> Save Booking
+                </button>
+              </div>
+            </form>
           )}
+          {type === 'detail' && (
+            <div className="space-y-6">
+              <div className="bg-[#121212] p-6 rounded-xl border border-[#333] space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-600 rounded-xl text-white"><User size={20}/></div>
+                  <div>
+                    <p className="text-[10px] font-black text-[#555] uppercase">Peminjam</p>
+                    <p className="text-lg font-bold text-white italic leading-none">{form.namaPeminjam}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-600/10 rounded-xl text-indigo-500"><MapPin size={20}/></div>
+                  <div>
+                    <p className="text-[10px] font-black text-[#555] uppercase">Ruangan</p>
+                    <p className="text-sm font-bold text-white uppercase leading-none">{form.ruangan}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-[#121212] p-6 rounded-xl border border-[#333] space-y-4">
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Jadwal Penggunaan</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[9px] text-[#444] font-bold uppercase">Mulai</p>
+                    <p className="text-xs text-white font-bold">{new Date(form.tanggalPinjam).toLocaleString('id-ID')}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-[#444] font-bold uppercase">Selesai</p>
+                    <p className="text-xs text-white font-bold">{new Date(form.tanggalKembali).toLocaleString('id-ID')}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button onClick={() => setModalType('edit')} className="flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 rounded-xl font-bold uppercase text-xs transition-all"><Edit3 size={14}/> Edit</button>
+                <button onClick={() => {
+                   if(window.confirm("Hapus?")) axios.delete(`http://localhost:5205/api/Peminjaman/${form.id}`).then(() => { refreshData(); onClose(); });
+                }} className="flex items-center justify-center gap-2 bg-rose-500/10 text-rose-500 py-4 rounded-xl font-bold uppercase text-xs border border-rose-500/20 transition-all"><Trash2 size={14}/> Hapus</button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
