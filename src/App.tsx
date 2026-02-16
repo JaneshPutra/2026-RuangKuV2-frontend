@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, LayoutGrid, Plus, Check, Info, DoorOpen, X as CloseIcon, Calendar, Users } from 'lucide-react';
+import { User, LayoutGrid, Plus, Check, Info, DoorOpen, X as CloseIcon, Calendar, Users, Edit3 } from 'lucide-react';
 import axios from 'axios';
 import Modal from './components/Modal';
 
+// --- INTERFACES ---
 export interface Peminjaman {
   id: number;
   namaPeminjam: string;
@@ -12,7 +13,16 @@ export interface Peminjaman {
   status: 'Menunggu' | 'Disetujui' | 'Ditolak';
 }
 
+export interface Ruangan {
+  id: number;
+  namaRuangan: string;
+  kapasitas: number;
+  lokasi: string;
+  status: 'Available' | 'Maintenance';
+}
+
 const API_URL = 'http://localhost:5205/api/Peminjaman';
+const API_RUANGAN_URL = 'http://localhost:5205/api/Ruangan';
 
 const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -20,6 +30,10 @@ const App: React.FC = () => {
   const [selectedData, setSelectedData] = useState<Peminjaman | null>(null);
   const [dataPeminjaman, setDataPeminjaman] = useState<Peminjaman[]>([]);
 
+  // State baru untuk data ruangan asli dari database
+  const [dataRuangan, setDataRuangan] = useState<Ruangan[]>([]);
+
+  // Fetch data peminjaman
   const fetchData = async () => {
     try {
       const response = await axios.get<Peminjaman[]>(API_URL);
@@ -27,7 +41,18 @@ const App: React.FC = () => {
     } catch (error) { console.error(error); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  // Fetch data ruangan
+  const fetchRuangan = async () => {
+    try {
+      const response = await axios.get<Ruangan[]>(API_RUANGAN_URL);
+      setDataRuangan(response.data);
+    } catch (error) { console.error("Gagal load data ruangan", error); }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchRuangan();
+  }, []);
 
   const openModal = (type: 'add' | 'edit' | 'detail', data?: Peminjaman) => {
     setModalType(type);
@@ -37,21 +62,13 @@ const App: React.FC = () => {
 
   const handleUpdateStatus = async (item: Peminjaman, newStatus: 'Disetujui' | 'Ditolak') => {
     try {
-      // Kita kirim seluruh object tapi statusnya diganti
       await axios.put(`${API_URL}/${item.id}`, { ...item, status: newStatus });
-      fetchData(); // Refresh data biar tabel berubah
+      fetchData();
     } catch (error) {
       alert("Gagal memperbarui status!");
       console.error(error);
     }
   };
-
-  const statsRooms = [
-    { name: "Lab Komp 1", cap: 30, status: "Available", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { name: "Aula Utama", cap: 200, status: "Maintenance", color: "text-amber-500", bg: "bg-amber-500/10" },
-    { name: "R. Rapat 2", cap: 12, status: "Available", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { name: "Studio", cap: 10, status: "Available", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  ];
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#e3e3e3] font-sans">
@@ -79,25 +96,48 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        {/* REVISI CARD RUANGAN */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {statsRooms.map((room, idx) => (
-            <div key={idx} className="bg-[#1e1e1e] border border-[#333] p-6 rounded-[2rem] relative overflow-hidden group hover:border-indigo-500/50 transition-all">
-              <div className="flex justify-between items-start mb-4 relative z-10">
-                <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${room.color} border-current opacity-70`}>{room.status}</span>
+        {/* CARD RUANGAN - COMPACT HORIZONTAL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+          {dataRuangan.map((room) => (
+            <div
+              key={room.id}
+              onClick={() => openModal('detail_room', room as any)}
+              className="bg-[#1e1e1e] border border-[#333] p-5 rounded-[1.5rem] flex items-center justify-between group hover:border-indigo-500/50 hover:bg-[#222] transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-4">
+                {/* Status Mini Indicator */}
+                <div className={`w-2 h-10 rounded-full ${room.status === 'Available' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                  }`} />
+
+                <div>
+                  <h3 className="text-base font-black text-white tracking-tighter uppercase italic leading-none group-hover:text-indigo-400 transition-colors">
+                    {room.namaRuangan}
+                  </h3>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <p className="text-[9px] text-indigo-500 font-black uppercase tracking-widest">{room.lokasi}</p>
+                    <span className="text-[10px] text-[#444]">•</span>
+                    <div className="flex items-center gap-1 text-[#555]">
+                      <Users size={12} />
+                      <span className="text-[10px] font-bold">{room.kapasitas} Pax</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="relative z-10">
-                <h3 className="text-lg font-black text-white tracking-tight uppercase leading-none">{room.name}</h3>
-                <div className="flex items-center gap-2 mt-2 text-[#555]">
-                  <Users size={14} />
-                  <p className="text-xs font-bold uppercase tracking-widest">{room.cap} Seats Capacity</p>
+
+              <div className="flex items-center gap-4">
+                <span className={`text-[8px] font-black px-2 py-1 rounded-md bg-[#121212] border ${room.status === 'Available' ? 'border-emerald-500/20 text-emerald-500' : 'border-amber-500/20 text-amber-500'
+                  } uppercase tracking-widest`}>
+                  {room.status}
+                </span>
+                <div className="text-[#333] group-hover:text-indigo-500 transition-colors">
+                  <Info size={16} />
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* REVISI TABEL */}
+        {/* TABEL PEMINJAMAN */}
         <div className="bg-[#1e1e1e] border border-[#333] rounded-[2.5rem] shadow-2xl overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-[#252525] text-[#555] text-[10px] uppercase font-black tracking-[0.2em] border-b border-[#333]">
@@ -135,29 +175,9 @@ const App: React.FC = () => {
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex justify-center gap-2">
-                      {/* BUTTON ACC (Ganti Status ke Disetujui) */}
-                      <button
-                        onClick={() => handleUpdateStatus(item, 'Disetujui')}
-                        className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/5"
-                      >
-                        <Check size={18} />
-                      </button>
-
-                      {/* BUTTON REJECT (Ganti Status ke Ditolak) */}
-                      <button
-                        onClick={() => handleUpdateStatus(item, 'Ditolak')}
-                        className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shadow-lg shadow-rose-500/5"
-                      >
-                        <CloseIcon size={18} />
-                      </button>
-
-                      {/* BUTTON DETAIL (Buka Modal) */}
-                      <button
-                        onClick={() => openModal('detail', item)}
-                        className="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/20 shadow-lg shadow-indigo-500/5"
-                      >
-                        <Info size={18} />
-                      </button>
+                      <button onClick={() => handleUpdateStatus(item, 'Disetujui')} className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/5"><Check size={18} /></button>
+                      <button onClick={() => handleUpdateStatus(item, 'Ditolak')} className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shadow-lg shadow-rose-500/5"><CloseIcon size={18} /></button>
+                      <button onClick={() => openModal('detail', item)} className="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/20 shadow-lg shadow-indigo-500/5"><Info size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -172,7 +192,9 @@ const App: React.FC = () => {
         type={modalType}
         data={selectedData}
         refreshData={fetchData}
-        setModalType={setModalType} // Tambahkan ini
+        setModalType={setModalType}
+        roomsData={dataRuangan}
+        allPeminjamanData={dataPeminjaman}
       />
     </div>
   );
