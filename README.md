@@ -1,73 +1,31 @@
-# React + TypeScript + Vite
+#  RuangKu - Frontend (React TypeScript + Tailwind)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Antarmuka modern untuk sistem reservasi ruangan dengan tema Dark Mode yang elegan.
 
-Currently, two official plugins are available:
+## Fitur Utama
+- **Floating Pill Navbar**: Navigasi modern berbentuk kapsul (Pill-shaped).
+- **Dashboard Interactive**: Tampilan kartu ruangan dan tabel reservasi.
+- **Advanced Form**: Reservasi dengan rentang waktu (Mulai & Selesai) menggunakan `datetime-local`.
+- **Business Logic**:
+  - Validasi status ruangan (Ruangan *Maintenance* tidak bisa dipilih).
+  - Feedback error real-time dari API.
+  - Sembunyi otomatis tombol aksi jika status sudah diproses.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
+- **Framework**: React.js (Vite)
+- **Langguage**: TypeScript
+- **Styling**: Tailwind CSS v3
+- **Icons**: Lucide React
+- **HTTP Client**: Axios
 
-## React Compiler
+## cara Menjalankan
+1. Pastikan Node.js sudah terinstall.
+2. Clone repository.
+3. Install dependencies:
+   ```bash
+   npm install
+4. Jalankan aplikasi dalam mode development:
+  ```bash
+  npm run dev
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Aplikasi akan berjalan di http://localhost:5173.
