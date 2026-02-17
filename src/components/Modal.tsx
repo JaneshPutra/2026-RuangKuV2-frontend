@@ -104,7 +104,7 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#121212] p-5 rounded-xl border border-[#333]">
                    <p className="text-[10px] font-black text-[#555] uppercase mb-1">Capacity</p>
-                   <p className="text-xl font-black text-white italic">{formRoom.kapasitas} Pax</p>
+                   <p className="text-xl font-black text-white italic">{formRoom.kapasitas} Kursi</p>
                 </div>
                 <div className="bg-[#121212] p-5 rounded-xl border border-[#333]">
                    <p className="text-[10px] font-black text-[#555] uppercase mb-1">Status</p>
@@ -188,19 +188,42 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
                     <input required type="datetime-local" className="w-full bg-[#121212] border border-[#333] rounded-xl p-3 text-white [color-scheme:dark]" value={form.tanggalKembali} onChange={e => setForm({...form, tanggalKembali: e.target.value})} />
                   </div>
                 </div>
+
                 <div>
                   <label className="text-xs font-bold text-indigo-500 uppercase mb-3 block">Pilih Ruangan</label>
                   <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
-                    {roomsData?.map((r: any) => (
-                      <div key={r.id} onClick={() => setForm({...form, ruangan: r.namaRuangan})} 
-                        className={`px-4 py-2.5 rounded-xl border cursor-pointer flex justify-between items-center transition-all ${form.ruangan === r.namaRuangan ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-[#333] bg-[#121212] text-[#555]'}`}>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold uppercase">{r.namaRuangan}</span>
-                          <span className="text-[10px] text-[#444] font-bold">{r.lokasi}</span>
+                    {roomsData?.map((r: any) => {
+                      const isMaintenance = r.status === 'Maintenance';
+                      return (
+                        <div 
+                          key={r.id} 
+                          onClick={() => !isMaintenance && setForm({...form, ruangan: r.namaRuangan})} 
+                          className={`px-4 py-2.5 rounded-xl border transition-all flex justify-between items-center ${
+                            isMaintenance 
+                              ? 'opacity-40 cursor-not-allowed bg-[#0d0d0d] border-[#222]' 
+                              : form.ruangan === r.namaRuangan 
+                                ? 'border-indigo-500 bg-indigo-500/10 text-white cursor-pointer' 
+                                : 'border-[#333] bg-[#121212] text-[#555] hover:border-[#444] cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase">{r.namaRuangan}</span>
+                              {isMaintenance && (
+                                <span className="text-[8px] bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded uppercase font-black">
+                                  Maintenance
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-[#444] font-bold">{r.lokasi}</span>
+                          </div>
+                          {form.ruangan === r.namaRuangan && !isMaintenance && (
+                            <CheckCircle2 size={16} className="text-indigo-500" />
+                          )}
+                          {isMaintenance && <X size={14} className="text-rose-500/50" />}
                         </div>
-                        {form.ruangan === r.namaRuangan && <CheckCircle2 size={16} className="text-indigo-500" />}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -211,6 +234,7 @@ const Modal = ({ isOpen, onClose, type, data, refreshData, setModalType, roomsDa
               </div>
             </form>
           )}
+
           {type === 'detail' && (
             <div className="space-y-6">
               <div className="bg-[#121212] p-6 rounded-xl border border-[#333] space-y-4">
