@@ -67,9 +67,6 @@ const App: React.FC = () => {
       <nav className="fixed top-5 left-1/2 -translate-x-1/2 w-[92%] max-w-6xl z-40">
         <div className="bg-[#1e1e1e]/90 backdrop-blur-xl border border-[#333] px-10 py-4 rounded-full flex justify-between items-center shadow-2xl">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-600/20">
-              <LayoutGrid size={20} className="text-white" />
-            </div>
             <span className="text-xl font-black text-white tracking-tighter uppercase italic">RuangKu</span>
           </div>
           <div className="flex items-center gap-4">
@@ -98,8 +95,8 @@ const App: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className={`w-1.5 h-10 rounded-full ${room.status === 'Available' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]'}`} />
                 <div>
-                  <h3 className="text-base font-black text-white tracking-tighter uppercase italic leading-none">{room.namaRuangan}</h3>
-                  <p className="text-[9px] text-indigo-500 font-black uppercase tracking-widest mt-1.5">{room.lokasi} • {room.kapasitas} Pax</p>
+                  <h3 className="text-base font-black text-white tracking-tighter uppercase leading-none">{room.namaRuangan}</h3>
+                  <p className="text-[9px] text-indigo-500 font-black uppercase tracking-widest mt-1.5">{room.lokasi} • {room.kapasitas} Kursi </p>
                 </div>
               </div>
               <span className={`text-[8px] font-black px-2 py-1 rounded-md bg-[#121212] border ${room.status === 'Available' ? 'border-emerald-500/20 text-emerald-500' : 'border-amber-500/20 text-amber-500'} uppercase tracking-widest`}>{room.status}</span>
@@ -141,7 +138,7 @@ const App: React.FC = () => {
             <tbody className="divide-y divide-[#333]">
               {dataPeminjaman.map((item) => (
                 <tr key={item.id} className="hover:bg-[#252525]/30 transition-colors">
-                  <td className="px-8 py-6 font-bold text-white text-lg tracking-tight italic">{item.namaPeminjam}</td>
+                  <td className="px-8 py-6 font-bold text-white text-lg tracking-tight">{item.namaPeminjam}</td>
                   <td className="px-8 py-6"><span className="text-indigo-400 font-black uppercase text-xs tracking-widest">{item.ruangan}</span></td>
                   <td className="px-8 py-6">
                     <div className="flex flex-col items-center gap-1">
